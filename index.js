@@ -1,13 +1,13 @@
-import express from "express";
-import cors from "cors";
-import session from "express-session";
 import "dotenv/config";
-import Lab5 from "./Lab5/index.js";
+import express from "express";
+import session from "express-session";
+import cors from "cors";
 import UserRoutes from "./Kambaz/Users/routes.js";
 import CourseRoutes from "./Kambaz/Courses/routes.js";
 import ModuleRoutes from "./Kambaz/Modules/routes.js";
 import AssignmentRoutes from "./Kambaz/Assignments/routes.js";
 import EnrollmentRoutes from "./Kambaz/Enrollments/routes.js";
+import Lab5 from "./Lab5/index.js";
 
 const app = express();
 
@@ -19,7 +19,7 @@ app.use(
 );
 
 const sessionOptions = {
-  secret: process.env.SESSION_SECRET || "kambaz",
+  secret: process.env.SESSION_SECRET || "a-super-secret-key-that-is-long",
   resave: false,
   saveUninitialized: false,
 };
@@ -32,15 +32,15 @@ if (process.env.NODE_ENV !== "development") {
     domain: process.env.NODE_SERVER_DOMAIN,
   };
 }
-
 app.use(session(sessionOptions));
 app.use(express.json());
 
-Lab5(app);
 UserRoutes(app);
 CourseRoutes(app);
 ModuleRoutes(app);
 AssignmentRoutes(app);
 EnrollmentRoutes(app);
+Lab5(app);
 
-app.listen(process.env.PORT || 4000);
+const port = process.env.PORT || 4000;
+app.listen(port);

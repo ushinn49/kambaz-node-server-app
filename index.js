@@ -11,12 +11,33 @@ import Lab5 from "./Lab5/index.js";
 
 const app = express();
 
+// --- START OF FIX ---
+// Define a list of allowed origins.
+const allowedOrigins = [
+  process.env.NETLIFY_URL,
+  "http://localhost:5173",
+  "http://localhost:4000",
+];
+
 app.use(
   cors({
     credentials: true,
-    origin: process.env.NETLIFY_URL || "http://localhost:5173",
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      // Check if the origin is in our allowed list or if it's a Netlify deploy preview.
+      // Netlify deploy previews have a pattern like: https://[deploy-id]--yoursitename.netlify.app
+      if (allowedOrigins.indexOf(origin) !== -1 || (origin && origin.endsWith("--yuchen-kambaz.netlify.app"))) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    }
   })
 );
+// --- END OF FIX ---
+
 
 const sessionOptions = {
   secret: process.env.SESSION_SECRET || "a-super-secret-key-that-is-long",

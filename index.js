@@ -30,17 +30,17 @@ app.use(
   })
 );
 
-// Session configuration
-app.use(session({
-  secret: "a-super-secret-key-that-is-long",
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: false, // Set to true in production with HTTPS
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}));
+   app.set("trust proxy", 1);           // 如果在 Render、Heroku、Vercel 等反向代理后面
+   app.use(session({
+     secret: "a-super-secret-key-that-is-long",
+     resave: false,
+     saveUninitialized: false,
+     cookie: {
+       sameSite: "none",   // 关键：允许跨站点发送
+       secure: true,       // 关键：HTTPS 才允许浏览器存/发此 cookie
+       maxAge: 24 * 60 * 60 * 1000
+     }
+   }));
 
 app.use(express.json());
 

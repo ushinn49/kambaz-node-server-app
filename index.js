@@ -11,49 +11,26 @@ import Lab5 from "./Lab5/index.js";
 
 const app = express();
 
-// --- START OF FIX ---
-// Define a list of allowed origins.
-const allowedOrigins = [
-  process.env.NETLIFY_URL,
-  "http://localhost:5173",
-  "http://localhost:4000",
-];
-
+// CORS configuration
 app.use(
   cors({
     credentials: true,
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-
-      // Check if the origin is in our allowed list or if it's a Netlify deploy preview.
-      // Netlify deploy previews have a pattern like: https://[deploy-id]--yoursitename.netlify.app
-      if (allowedOrigins.indexOf(origin) !== -1 || (origin && origin.endsWith("--yuchen-kambaz.netlify.app"))) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    }
+    origin: "http://localhost:5173"
   })
 );
-// --- END OF FIX ---
 
-
-const sessionOptions = {
-  secret: process.env.SESSION_SECRET || "a-super-secret-key-that-is-long",
+// Session configuration
+app.use(session({
+  secret: "a-super-secret-key-that-is-long",
   resave: false,
   saveUninitialized: false,
-};
+  cookie: {
+    secure: false, // Set to true in production with HTTPS
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
 
-if (process.env.NODE_ENV !== "development") {
-  sessionOptions.proxy = true;
-  sessionOptions.cookie = {
-    sameSite: "none",
-    secure: true,
-    domain: process.env.NODE_SERVER_DOMAIN,
-  };
-}
-app.use(session(sessionOptions));
 app.use(express.json());
 
 UserRoutes(app);
@@ -64,4 +41,6 @@ EnrollmentRoutes(app);
 Lab5(app);
 
 const port = process.env.PORT || 4000;
-app.listen(port);
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});

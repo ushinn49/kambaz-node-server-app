@@ -11,11 +11,22 @@ import Lab5 from "./Lab5/index.js";
 
 const app = express();
 
-// CORS configuration
+// 允许本地开发和已部署的 Netlify 站点
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://a5--yuchen-kambaz.netlify.app"
+];
+
 app.use(
   cors({
     credentials: true,
-    origin: "http://localhost:5173"
+    origin: function (origin, callback) {
+      // allow requests with no origin (like mobile apps/postman)
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("CORS policy violation"));
+    }
   })
 );
 
@@ -25,7 +36,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: true,
+    secure: false, // Set to true in production with HTTPS
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }

@@ -11,7 +11,7 @@ import Lab5 from "./Lab5/index.js";
 
 const app = express();
 
-// 允许本地开发和已部署的 Netlify 站点
+
 const allowedOrigins = [
   "http://localhost:5173",
   "https://a5--yuchen-kambaz.netlify.app"

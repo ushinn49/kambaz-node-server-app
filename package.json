@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "start": "node ./index.js"
   },
   "repository": {
     "type": "git",
@@ -34,6 +34,7 @@
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
+    "mongoose": "^8.16.0",
     "uuid": "^11.1.0"
   },
   "devDependencies": {

@@ -1,23 +1,17 @@
-import Database from "../Database/index.js";
-import { v4 as uuidv4 } from "uuid";
+import model from "./model.js";
 
-// This function is from the textbook 
-export function enrollUserInCourse(userId, courseId) {
-  const { enrollments } = Database;
-  const newEnrollment = { _id: uuidv4(), user: userId, course: courseId };
-  enrollments.push(newEnrollment);
-  return newEnrollment;
-}
+export const enrollUserInCourse = (userId, courseId) => 
+    model.create({ user: userId, course: courseId, _id: `${userId}-${courseId}` });
 
-// This function is required for the unenroll feature
-export function unenrollUserFromCourse(userId, courseId) {
-    Database.enrollments = Database.enrollments.filter(
-        (e) => !(e.user === userId && e.course === courseId)
-    );
-    return { status: "OK" };
-}
+export const unenrollUserFromCourse = (userId, courseId) =>
+    model.deleteOne({ user: userId, course: courseId });
 
-// This function can be used to find all enrollments for a specific user
-export function findEnrollmentsForUser(userId) {
-    return Database.enrollments.filter((e) => e.user === userId);
-}
+export const findUsersForCourse = async (courseId) => {
+    const enrollments = await model.find({ course: courseId }).populate("user");
+    return enrollments.map((enrollment) => enrollment.user);
+};
+
+export const findCoursesForUser = async (userId) => {
+    const enrollments = await model.find({ user: userId }).populate("course");
+    return enrollments.map((enrollment) => enrollment.course);
+};

@@ -38,18 +38,60 @@ mongoose.connect(CONNECTION_STRING)
 // 导入初始数据到数据库
 async function importInitialData() {
   try {
+    // 导入用户数据
     const UserModel = mongoose.model("UserModel");
     const usersCount = await UserModel.countDocuments();
     
     if (usersCount === 0) {
       console.log("No users found in database. Importing initial data...");
       
-      // 导入用户数据
       const usersData = dbData.users;
       await UserModel.insertMany(usersData);
       console.log(`Imported ${usersData.length} users`);
     } else {
       console.log(`Database already contains ${usersCount} users`);
+    }
+
+    // 导入课程数据
+    const CourseModel = mongoose.model("CourseModel");
+    const coursesCount = await CourseModel.countDocuments();
+    
+    if (coursesCount === 0) {
+      console.log("No courses found in database. Importing course data...");
+      
+      const coursesData = dbData.courses;
+      await CourseModel.insertMany(coursesData);
+      console.log(`Imported ${coursesData.length} courses`);
+    } else {
+      console.log(`Database already contains ${coursesCount} courses`);
+    }
+    
+    // 导入选课数据
+    const EnrollmentModel = mongoose.model("EnrollmentModel");
+    const enrollmentsCount = await EnrollmentModel.countDocuments();
+    
+    if (enrollmentsCount === 0) {
+      console.log("No enrollments found in database. Importing enrollment data...");
+      
+      const enrollmentsData = dbData.enrollments;
+      
+      // 手动循环创建每个选课记录，确保引用正确
+      for (const enrollment of enrollmentsData) {
+        try {
+          const enrollmentDoc = {
+            _id: `${enrollment.user}-${enrollment.course}`,
+            user: enrollment.user,
+            course: enrollment.course
+          };
+          await EnrollmentModel.create(enrollmentDoc);
+          console.log(`Created enrollment: ${enrollmentDoc._id}`);
+        } catch (err) {
+          console.error(`Error creating enrollment for user ${enrollment.user}, course ${enrollment.course}:`, err);
+        }
+      }
+      console.log(`Attempted to import ${enrollmentsData.length} enrollments`);
+    } else {
+      console.log(`Database already contains ${enrollmentsCount} enrollments`);
     }
   } catch (error) {
     console.error("Error importing initial data:", error);

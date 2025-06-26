@@ -53,13 +53,21 @@ export default function UserRoutes(app) {
     };
 
     const signin = async (req, res) => {
-        const { username, password } = req.body;
-        const currentUser = await dao.findUserByCredentials(username, password);
-        if (currentUser) {
-            req.session["currentUser"] = currentUser;
-            res.json(currentUser);
-        } else {
-            res.sendStatus(401);
+        try {
+            const { username, password } = req.body;
+            console.log("Login attempt:", { username, password });
+            const currentUser = await dao.findUserByCredentials(username, password);
+            if (currentUser) {
+                req.session["currentUser"] = currentUser;
+                console.log("User authenticated:", currentUser);
+                res.json(currentUser);
+            } else {
+                console.log("Authentication failed: Invalid credentials");
+                res.status(401).json({ message: "Invalid credentials" });
+            }
+        } catch (error) {
+            console.error("Signin error:", error);
+            res.status(500).json({ message: "Server error during signin" });
         }
     };
 
@@ -69,12 +77,20 @@ export default function UserRoutes(app) {
     };
 
     const profile = (req, res) => {
-        const currentUser = req.session["currentUser"];
-        if (!currentUser) {
-            res.sendStatus(401);
-            return;
+        try {
+            console.log("Session:", req.session);
+            const currentUser = req.session["currentUser"];
+            if (!currentUser) {
+                console.log("No user in session");
+                res.status(401).json({ message: "Not authenticated" });
+                return;
+            }
+            console.log("Profile request for user:", currentUser);
+            res.json(currentUser);
+        } catch (error) {
+            console.error("Profile error:", error);
+            res.status(500).json({ message: "Server error accessing profile" });
         }
-        res.json(currentUser);
     };
     
     const enrollUserInCourse = async (req, res) => {

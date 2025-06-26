@@ -23,13 +23,10 @@ import dbData from "./Kambaz/Database/index.js";
 const CONNECTION_STRING = process.env.MONGO_CONNECTION_STRING || "mongodb://127.0.0.1:27017/kambaz";
 console.log("Connecting to MongoDB at:", CONNECTION_STRING.replace(/\/\/(.+?)@/, "//***:***@"));
 
-mongoose.connect(CONNECTION_STRING)
-  .then(() => {
-    console.log("MongoDB connected successfully");
-    
-    // 导入初始数据
-    importInitialData();
-  })
+mongoose.connect(CONNECTION_STRING, {
+  dbName: "kambaz",   // ← 强制使用 kambaz 数据库
+})
+.then(() => console.log("MongoDB connected to kambaz"))
   .catch(err => {
     console.error("MongoDB connection error:", err);
     // 不退出进程，让应用继续运行，只是会话功能可能不可用

@@ -17,7 +17,11 @@ const app = express();
 app.use(
   cors({
     credentials: true,
-    origin: [process.env.NETLIFY_URL || "http://localhost:5173", "http://127.0.0.1:5173"],
+    origin: [
+      process.env.NETLIFY_URL || "http://localhost:5173", 
+      "http://127.0.0.1:5173",
+      "https://yuchen-kambaz-a6.netlify.app"
+    ],
   })
 );
 

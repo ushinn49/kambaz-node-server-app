@@ -106,9 +106,16 @@ export default function UserRoutes(app) {
     };
 
     const findCoursesForUser = async (req, res) => {
-        const { userId } = req.params;
-        const courses = await enrollmentsDao.findCoursesForUser(userId);
-        res.json(courses);
+        try {
+            const { userId } = req.params;
+            console.log(`API: Finding courses for user: ${userId}`);
+            const courses = await enrollmentsDao.findCoursesForUser(userId);
+            console.log(`API: Found ${courses.length} courses for user ${userId}`);
+            res.json(courses);
+        } catch (error) {
+            console.error(`API: Error finding courses for user:`, error);
+            res.status(500).json({ message: "Error finding courses for user" });
+        }
     };
 
     app.post("/api/users", createUser);

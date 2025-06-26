@@ -42,14 +42,46 @@ export default function UserRoutes(app) {
     };
 
     const signup = async (req, res) => {
-        const user = await dao.findUserByUsername(req.body.username);
-        if (user) {
-            res.status(400).json({ message: "Username already taken" });
-            return;
+        try {
+            console.log("Signup attempt:", req.body);
+            
+            // 确保请求包含必要字段
+            if (!req.body.username || !req.body.password) {
+                return res.status(400).json({ message: "Username and password are required" });
+            }
+            
+            const user = await dao.findUserByUsername(req.body.username);
+            if (user) {
+                console.log("Username already taken:", req.body.username);
+                return res.status(400).json({ message: "Username already taken" });
+            }
+
+            // 确保有_id字段，否则提供一个
+            const userData = { ...req.body };
+            if (!userData._id) {
+                userData._id = Date.now().toString();
+            }
+            
+            // 确保有role字段
+            if (!userData.role) {
+                userData.role = "STUDENT";
+            }
+            
+            console.log("Creating new user:", userData);
+            const currentUser = await dao.createUser(userData);
+            console.log("User created successfully:", currentUser);
+            
+            // 保存到会话
+            req.session["currentUser"] = currentUser;
+            
+            return res.json(currentUser);
+        } catch (error) {
+            console.error("Signup error:", error);
+            return res.status(500).json({ 
+                message: "Server error during signup", 
+                error: error.message 
+            });
         }
-        const currentUser = await dao.createUser(req.body);
-        req.session["currentUser"] = currentUser;
-        res.json(currentUser);
     };
 
     const signin = async (req, res) => {

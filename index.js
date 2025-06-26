@@ -24,9 +24,14 @@ const CONNECTION_STRING = process.env.MONGO_CONNECTION_STRING || "mongodb://127.
 console.log("Connecting to MongoDB at:", CONNECTION_STRING.replace(/\/\/(.+?)@/, "//***:***@"));
 
 mongoose.connect(CONNECTION_STRING, {
-  dbName: "kambaz",   // ← 强制使用 kambaz 数据库
+  dbName: "kambaz", // 强制使用kambaz数据库
 })
-.then(() => console.log("MongoDB connected to kambaz"))
+  .then(() => {
+    console.log("MongoDB connected to kambaz");
+    
+    // 导入初始数据
+    importInitialData();
+  })
   .catch(err => {
     console.error("MongoDB connection error:", err);
     // 不退出进程，让应用继续运行，只是会话功能可能不可用
@@ -57,8 +62,13 @@ async function importInitialData() {
       console.log("No courses found in database. Importing course data...");
       
       const coursesData = dbData.courses;
-      await CourseModel.insertMany(coursesData);
-      console.log(`Imported ${coursesData.length} courses`);
+      try {
+        await CourseModel.insertMany(coursesData, { ordered: false });
+        console.log(`Imported ${coursesData.length} courses`);
+      } catch (e) {
+        if (e.code !== 11000) throw e; // 非重复键错误才抛出
+        console.log(`Some courses already exist, skipping duplicates`);
+      }
     } else {
       console.log(`Database already contains ${coursesCount} courses`);
     }
@@ -83,7 +93,9 @@ async function importInitialData() {
           await EnrollmentModel.create(enrollmentDoc);
           console.log(`Created enrollment: ${enrollmentDoc._id}`);
         } catch (err) {
-          console.error(`Error creating enrollment for user ${enrollment.user}, course ${enrollment.course}:`, err);
+          if (err.code !== 11000) { // 跳过重复键错误
+            console.error(`Error creating enrollment for user ${enrollment.user}, course ${enrollment.course}:`, err);
+          }
         }
       }
       console.log(`Attempted to import ${enrollmentsData.length} enrollments`);
@@ -97,16 +109,51 @@ async function importInitialData() {
 
 const app = express();
 
-app.use(
-  cors({
-    credentials: true,
-    origin: [
-      process.env.NETLIFY_URL || "http://localhost:5173", 
-      "http://127.0.0.1:5173",
-      "https://yuchen-kambaz-a6.netlify.app"
-    ],
-  })
-);
+// ======= 完全替换CORS配置 ========
+// 定义允许的来源
+const allowedOrigins = [
+  "https://yuchen-kambaz-a6.netlify.app",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173"
+];
+
+// 配置CORS中间件，确保所有响应都带CORS头
+app.use(cors({
+  origin: function(origin, callback) {
+    // 允许来自allowedOrigins中的请求或没有origin的请求（如直接访问API）
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, origin);
+    } else {
+      // 记录被拒绝的origin，但依然允许（调试模式）
+      console.warn(`CORS rejected origin: ${origin}`);
+      callback(null, allowedOrigins[0]); // 默认允许第一个origin
+    }
+  },
+  credentials: true, // 允许跨域请求携带凭据（cookies）
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
+  allowedHeaders: "Origin,X-Requested-With,Content-Type,Accept,Authorization",
+  optionsSuccessStatus: 204 // 预检请求的成功状态码
+}));
+
+// 处理OPTIONS预检请求
+app.options("*", cors());
+
+// 添加错误处理中间件，确保即使出错也带上CORS头
+app.use((err, req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+    res.header("Access-Control-Allow-Credentials", "true");
+  }
+  
+  if (res.headersSent) {
+    return next(err);
+  }
+  
+  console.error("Server error:", err);
+  res.status(500).json({ message: "Internal server error" });
+});
+// ======= CORS配置结束 ========
 
 app.set("trust proxy", 1);
 const sessionOptions = {
@@ -116,6 +163,7 @@ const sessionOptions = {
   cookie: {
     sameSite: "none",
     secure: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24小时
   }
 };
 

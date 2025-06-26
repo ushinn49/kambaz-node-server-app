@@ -46,18 +46,43 @@ export default function CourseRoutes(app) {
     };
     
     const findAssignmentsForCourse = async (req, res) => {
-        const { courseId } = req.params;
-        const assignments = await assignmentsDao.findAssignmentsForCourse(courseId);
-        res.json(assignments);
+        try {
+            const { courseId } = req.params;
+            console.log(`API: Finding assignments for course: ${courseId}`);
+            
+            const assignments = await assignmentsDao.findAssignmentsForCourse(courseId);
+            console.log(`API: Found ${assignments.length} assignments for course ${courseId}`);
+            
+            res.json(assignments);
+        } catch (error) {
+            console.error(`API: Error finding assignments for course ${req.params.courseId}:`, error);
+            res.status(500).json({ message: "Error finding assignments for course", error: error.message });
+        }
     };
 
     const createAssignmentForCourse = async (req, res) => {
-        const { courseId } = req.params;
-        const newAssignment = await assignmentsDao.createAssignment({
-            ...req.body,
-            course: courseId,
-        });
-        res.json(newAssignment);
+        try {
+            const { courseId } = req.params;
+            console.log(`API: Creating assignment for course: ${courseId}`, req.body);
+            
+            const assignmentData = {
+                ...req.body,
+                course: courseId
+            };
+            
+            // 确保至少有标题
+            if (!assignmentData.title) {
+                assignmentData.title = "New Assignment";
+            }
+            
+            const newAssignment = await assignmentsDao.createAssignment(assignmentData);
+            console.log("API: Created assignment:", newAssignment);
+            
+            res.json(newAssignment);
+        } catch (error) {
+            console.error("API Error creating assignment:", error);
+            res.status(500).json({ message: "Server error", error: error.message });
+        }
     };
     
     const findUsersForCourse = async (req, res) => {
